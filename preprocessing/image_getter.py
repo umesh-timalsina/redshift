@@ -110,7 +110,7 @@ if __name__ == "__main__":
         url='https://dr12.sdss.org/sas/dr12/boss/photoObj/frames/' +
             '{rerun}/{run}/{camcol}/frame-{band}-{run_str}-{camcol}-{field}.fits.bz2',
         loc='../data/images/',
-        num_images=10,
+        num_images=5,
         csv_loc='../data/meta_gal.csv'
     )
     num_files = id.download_fits()
