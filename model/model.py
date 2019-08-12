@@ -116,4 +116,4 @@ if __name__ == "__main__":
     rscm = RedShiftClassificationModel((64, 64, 5), 1024)
     save_model_image(rscm, 'redshiftmodel.png')
     # print(rscm.predict(np.random.rand(1, 64, 64, 5)).shape)
-    rscm.prepare_for_training()
+    # rscm.prepare_for_training()
