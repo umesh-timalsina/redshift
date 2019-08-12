@@ -9,10 +9,13 @@ import configparser
 from astropy.io import fits
 import numpy as np
 import bz2
+import glob
+import pandas as pd
+from pickle import dump
 
 
 class SwarpExecutor():
-    def __init__(self, config_file=None):
+    def __init__(self, config_file=None, images_meta=None):
         """Initialize the class.
             params:
                 config_file: path to a config file for swarp
@@ -25,6 +28,55 @@ class SwarpExecutor():
             if ret_val != 0:
                 raise Exception('Error generating the swap configuration file')
             self.config_file = '.swarp.conf'
+        self.images_meta = pd.read_csv(images_meta, sep=',')
+
+    def _check_imgs(self):
+        """Check if all the images in the meta file are present"""
+        for i in range(len(self.images_meta)):
+            cur_files = self.images_meta.iloc[i]
+            cur_files = list(cur_files[-5:])
+            # print(cur_files)
+            missing = False
+            for _file in cur_files:
+                # print(_file)
+                if not os.path.exists(_file):
+                    missing = True
+            if missing:
+                print('Some Files are missing')
+                break
+        if not missing:
+            print('All the files are found')
+            return True
+        else:
+            return False
+
+    def prepare_dataset(self,
+                        img_size,
+                        compressed=True):
+        if self._check_imgs():
+            X = []
+            y = []
+            for _, row in self.images_meta.iterrows():
+                target_redshift = row['z']
+                y.append([row['z']])
+                fits_loc = row[-5:]
+                one_example = self.return_datacube(fits_loc, 64)
+                X.append(one_example)
+            X = np.array(X)
+        assert(X.shape == (len(self.images_meta), img_size, img_size, 5))
+        data_dir = '/'.join(fits_loc[0].split('/')[0:3])
+
+        # Remove the fits files produced during the operation
+        if compressed:
+            os.system('rm -rf {}/*.fits'.format(data_dir))
+        os.system('rm -rf *.fits')
+        dataset = {
+            'X': X,
+            'y': y
+            }
+        with open('{}/dataset.pkl'.format(data_dir), 'wb+') as data_fp:
+            dump(dataset, data_fp)
+        print('Successfully dumped dataset to {}'.format(data_dir+'/dataset.pkl'))
 
     def return_datacube(self, fits_loc, img_size, compressed=True):
         """For a given set of fits files, return a
@@ -38,7 +90,7 @@ class SwarpExecutor():
                 print('Uncompressed Fits file is -> ', file_loc)
             else:
                 file_loc = fits_file
-            ret = os.system('swarp {0} -c {1}'.format(file_loc, self.config_file))
+            ret = os.system('swarp {0}[0] -c {1}'.format(file_loc, self.config_file))
             if ret != 0:
                 raise Exception('Error processing the input image')
             print('Done resampling =>', fits_file)
@@ -48,17 +100,13 @@ class SwarpExecutor():
                     data_mat = one_channel
                 else:
                     data_mat = np.concatenate((data_mat, one_channel), axis=-1)
+            # os.system('rm -rf *.fits')
         assert(data_mat.shape == (img_size, img_size, len(fits_loc)))
         return data_mat
 
 
 if __name__ == "__main__":
     import pandas as pd
-    meta = pd.read_csv('../data/images/updated_meta.csv')
-    se = SwarpExecutor(config_file='./.swarp.conf')
-    for i in range(5):
-        cur_data = meta.iloc[i]
-        cur_data = list(cur_data[-5:])
-        my_mat = se.return_datacube(cur_data, 64)
-        print(my_mat.shape)
-        print(np.equal(np.zeros((64, 64, 5)), my_mat))
+    # meta = pd.read_csv('../data/images/updated_meta.csv')
+    se = SwarpExecutor(config_file='./.swarp.conf', images_meta=glob.glob('../data/images/updated_meta_*.csv')[0])
+    se.prepare_dataset(64)

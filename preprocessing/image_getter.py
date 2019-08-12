@@ -14,6 +14,7 @@ from scrapy import Selector
 import requests
 import os
 import pandas as pd
+import time
 
 
 class ImagesDownloader():
@@ -45,15 +46,17 @@ class ImagesDownloader():
         # print(df.shape)
         self.meta = df
 
-    def download_fits(self):
+    def download_fits(self, only_scan=False):
         """Given the CSV for galaxies, download and extract the fits files
            and save them to a particular location
         """
-        self.meta['u_loc'] = np.NaN
-        self.meta['g_loc'] = np.NaN
-        self.meta['r_loc'] = np.NaN
-        self.meta['i_loc'] = np.NaN
-        self.meta['z_loc'] = np.NaN
+        images_path = {
+            'u_loc': [],
+            'g_loc': [],
+            'r_loc': [],
+            'i_loc': [],
+            'z_loc': []
+        }
         loc_itr = ['u_loc', 'g_loc', 'r_loc', 'i_loc', 'z_loc']  # Temp Hack
         dl_count = 0
         for i, galaxy in self.meta.iterrows():
@@ -61,23 +64,45 @@ class ImagesDownloader():
                                              galaxy['run'],
                                              galaxy['camcol'],
                                              galaxy['field'])
+            i = 0
             for band_loc, url in zip(loc_itr, to_dl):
-                r = requests.get(url, stream=True)
-                if r.status_code == 200:
-                    file_name = os.path.join(self.data_loc, url.split('/')[-1])
-                    with open(file_name, 'wb') as bz2File:
-                        for chunks in r:
-                            bz2File.write(chunks)
-                    print('Successfully Downloaded -> ', url.split('/')[-1])
-                    self.meta[band_loc] = file_name
+                # self.download_image(band_loc, url)
+                file_name = os.path.join(self.data_loc, url.split('/')[-1])
+                if only_scan:
+                    # self.meta[band_loc].append(file_name)
+                    images_path[band_loc].append(file_name)
                     dl_count += 1
                 else:
-                    self.meta[band_loc] = 'Failed'
-                    print('Failed to download -> ', url.split('/')[-1])
+                    dl_count += self.download_image(band_loc, url)
+                    images_path[band_loc].append(file_name)
         print('Number of Images Downloaded: ', dl_count)
-        self.meta.to_csv(os.path.join(self.data_loc, 'updated_meta.csv'))
+        # self.meta = pd.concat([self.meta, urls_df], axis=1)
+        for loc in loc_itr:
+            assert(len(images_path[loc]) == self.meta.shape[0])
+            self.meta[loc] = images_path[loc]
+        self.meta.to_csv(os.path.join(self.data_loc, 'updated_meta_{}.csv'.format(time.time())))
         print('Successfully saved the csv file with updated meta....')
         return dl_count
+
+    def download_image(self, band_loc, url):
+        """Download Images from the sas server
+            Important: This is very slow, write
+            a shell script for this
+        """
+        r = requests.get(url, stream=True)
+        if r.status_code == 200:
+            file_name = os.path.join(self.data_loc, url.split('/')[-1])
+            with open(file_name, 'wb') as bz2File:
+                for chunks in r:
+                    bz2File.write(chunks)
+            print('Successfully Downloaded -> ', url.split('/')[-1])
+            # self.meta[band_loc].append(file_name)
+            return 1
+            # dl_count += 1
+        else:
+            # self.meta[band_loc] = 'Failed'
+            print('Failed to download -> ', url.split('/')[-1])
+            return 0
 
     def _get_formatted_urls(self, rerun, run, camcol, field):
         """For this galaxy return all possible image urls"""
@@ -110,7 +135,7 @@ if __name__ == "__main__":
         url='https://dr12.sdss.org/sas/dr12/boss/photoObj/frames/' +
             '{rerun}/{run}/{camcol}/frame-{band}-{run_str}-{camcol}-{field}.fits.bz2',
         loc='../data/images/',
-        num_images=5,
+        num_images=10,
         csv_loc='../data/meta_gal.csv'
     )
-    num_files = id.download_fits()
+    num_files = id.download_fits(only_scan=False)
