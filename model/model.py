@@ -2,6 +2,7 @@
 from keras import Model
 from keras.layers import (Input, Conv2D, AveragePooling2D,
                           concatenate, Dense, PReLU, Flatten)
+from keras.optimizers import Adam
 # from keras.layers.merge import concatenate
 import numpy as np
 
@@ -70,6 +71,10 @@ class RedShiftClassificationModel(Model):
         super(RedShiftClassificationModel, self).__init__(
             inputs=[image_input], outputs=model_output)
         self.summary()
+        opt = Adam(lr=0.001)
+        self.compile(optimizer=opt,
+                     loss='sparse_categorical_crossentropy',
+                     metrics=['sparse_categorical_accuracy'])
 
     def add_inception_layer(self,
                             input_weights,
