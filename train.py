@@ -30,13 +30,15 @@ class Train():
         steps_per_epoch_train = train_X.shape[0]//self.batch_size
         steps_per_epoch_valid = valid_X.shape[0]//self.batch_size
 
-        model.fit_generator(self.data_generator(train_X, train_y_cats, self.batch_size),
-                            steps_per_epoch=steps_per_epoch_train,
-                            epochs=self.epochs, verbose=1,
-                            validation_data=self.data_generator(
-                                valid_X, valid_y_cats, self.batch_size),
-                            validation_steps=steps_per_epoch_valid)
-        model.save('10000-100Epochs.h5')
+        # model.fit_generator(self.data_generator(train_X, train_y_cats, self.batch_size),
+        #                     steps_per_epoch=steps_per_epoch_train,
+        #                     epochs=self.epochs, verbose=1,
+        #                     validation_data=self.data_generator(
+        #                         valid_X, valid_y_cats, self.batch_size),
+        #                     validation_steps=steps_per_epoch_valid)
+        model.fit(train_X, train_y_cats, epochs=25)
+
+        # model.save('10000-100Epochs.h5')
 
     def plot_hist(self, y):
         print(y.flatten().shape)
@@ -92,7 +94,7 @@ class Train():
 
 if __name__ == "__main__":
     from pickle import load
-    with open('data/images/dataset.pkl', 'rb') as pkl:
+    with open('data/images/combined_dataset.pkl', 'rb') as pkl:
         dataset = load(pkl)
     model = RedShiftClassificationModel((64, 64, 5), 1024)
     train_ins = Train(batch_size=32)

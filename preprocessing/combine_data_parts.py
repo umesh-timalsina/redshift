@@ -20,14 +20,11 @@ def combine_dataset(part='dataset-PART*.pkl',
             X1.extend(data_part['X'])
             y1.extend(data_part['y'])
     print(np.array(X1).shape)
-
+    dataset = {'X': np.array(X1), 'y': np.array(y1) }
     if _dump:
-        with open(os.path.join(data_dir, 'combined_dataset.pkl'), 'wb') as pkl:
-            dump(X1, pkl)
-    return {
-        'X': X1,
-        'y': y1
-    }
+        with open(os.path.join(datadir, 'combined_dataset.pkl'), 'wb') as pkl:
+            dump(dataset, pkl)
+    return dataset
 
 if __name__ == "__main__":
-    combine_dataset()
+    combine_dataset(_dump=True)
