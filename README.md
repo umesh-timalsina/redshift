@@ -14,4 +14,4 @@ In the preprocessing directory, there are the follwing major files
 4. [swarp_wrapper.py](./preprocessing/swarp_wrapper.py): A quick wrapper around swarp tool to prepare the dataset for training and testing.
 
 In the model directory, we present the model as presented in the paper. The keras visualization for the model is given below:
-![redshiftmodel](./images/redshiftmodel.png)
+![redshiftmodel as seen in deepforge](./images/convinception.png)
