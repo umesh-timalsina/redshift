@@ -11,7 +11,6 @@
 """
 import numpy as np
 from scrapy import Selector
-import requests
 import os
 import pandas as pd
 import time
@@ -89,21 +88,28 @@ class ImagesDownloader():
             Important: This is very slow, write
             a shell script for this
         """
-        r = requests.get(url, stream=True)
-        if r.status_code == 200:
-            file_name = os.path.join(self.data_loc, url.split('/')[-1])
-            with open(file_name, 'wb') as bz2File:
-                for chunks in r:
-                    bz2File.write(chunks)
-            print('Successfully Downloaded -> ', url.split('/')[-1])
-            # self.meta[band_loc].append(file_name)
+        # r = requests.get(url, stream=True)
+        # if r.status_code == 200:
+        #     file_name = os.path.join(self.data_loc, url.split('/')[-1])
+        #     with open(file_name, 'wb') as bz2File:
+        #         for chunks in r:
+        #             bz2File.write(chunks)
+        #     print('Successfully Downloaded -> ', url.split('/')[-1])
+        #     # self.meta[band_loc].append(file_name)
+        #     return 1
+        #     # dl_count += 1
+        # else:
+        #     # self.meta[band_loc] = 'Failed'
+        #     print('Failed to download -> ', url.split('/')[-1])
+        #     return 0
+        file_name = os.path.join(self.data_loc, url.split('/')[-1])
+        ret = os.system('wget -O {0} {1}'.format(file_name, url))
+        if ret == 0:
+            print('Successfully Downloaded -> ', file_name)
             return 1
-            # dl_count += 1
         else:
-            # self.meta[band_loc] = 'Failed'
-            print('Failed to download -> ', url.split('/')[-1])
+            print('Failed to download -> ', file_name)
             return 0
-
     def _get_formatted_urls(self, rerun, run, camcol, field):
         """For this galaxy return all possible image urls"""
         possible_bands = ['u', 'g', 'r', 'i', 'z']
@@ -129,13 +135,3 @@ class ImagesDownloader():
                                             band=band))
         return ret_list
 
-
-if __name__ == "__main__":
-    id = ImagesDownloader(
-        url='https://dr12.sdss.org/sas/dr12/boss/photoObj/frames/' +
-            '{rerun}/{run}/{camcol}/frame-{band}-{run_str}-{camcol}-{field}.fits.bz2',
-        loc='../data/images/',
-        num_images=25,
-        csv_loc='../data/meta_gal.csv'
-    )
-    num_files = id.download_fits(only_scan=False)

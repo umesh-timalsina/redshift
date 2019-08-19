@@ -82,15 +82,3 @@ class ParallelDataSetPreparer():
         splitted_images_meta = np.array_split(whole_meta, self.num_proc)
         assert(len(splitted_images_meta) == self.num_proc)
         return splitted_images_meta
-
-if __name__ == "__main__":
-    import pandas as pd
-    import glob
-    # meta = pd.read_csv('../data/images/updated_meta.csv')
-    # se = DatasetPreparer(config_file='./.swarp.conf', images_meta=glob.glob('../data/images/updated_meta_*.csv')[0])
-    pdp = ParallelDataSetPreparer(glob.glob('../data/images/updated_meta_*.csv')[0])
-    pdp.execute(swarp_config_file='./.swarp.conf',
-                img_size=64,
-                compressed=True,
-                dump_pickle=True,
-                filename='dataset.pkl')
