@@ -1,0 +1,7 @@
+keras
+tensorflow
+astropy
+numpy
+matplotlib
+requests
+
