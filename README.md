@@ -13,7 +13,7 @@ In the preprocessing directory, there are the follwing major files
 3. [image_getter.py](./preprocessing/image_getter.py): The python file to download the images from the SDSS [Archive server](https://data.sdss.org/sas/)
 4. [swarp_wrapper.py](./preprocessing/swarp_wrapper.py): A quick wrapper around swarp tool to prepare the dataset for training and testing.
 
-In the model directory, we present the model as presented in the paper. The keras visualization for the model is given below:
+In the model directory, we present the model as presented in the paper. The deepforge visualization for the model is given below:
 ![redshiftmodel as seen in deepforge](./images/convinception.png)
 
 Here are the five random predictions by the model(trained with 7000 examples), with 32 redshift bins:
