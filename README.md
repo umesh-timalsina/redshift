@@ -15,3 +15,6 @@ In the preprocessing directory, there are the follwing major files
 
 In the model directory, we present the model as presented in the paper. The keras visualization for the model is given below:
 ![redshiftmodel as seen in deepforge](./images/convinception.png)
+
+Here are the five random predictions by the model(trained with 7000 examples), with 32 redshift bins:
+![redshiftmodel as seen in deepforge](./images/random_predds.png)
