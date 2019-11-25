@@ -107,11 +107,3 @@ class DownloadFITS():
                                             camcol=str(camcol),
                                             band=band))
         return ret_list
-
-
-if __name__ == '__main__':
-    from casjobs_query import CASJOBSQuery
-    query = CASJOBSQuery()
-    df = query.execute()
-    downloader = DownloadFITS()
-    downloader.execute(df)
