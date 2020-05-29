@@ -1,2 +1,2 @@
-## Depricated
-This section of the package is depricated
+## Deprecated
+This section of the package is Deprecated.
