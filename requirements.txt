@@ -1,7 +1,8 @@
-keras
 tensorflow
 astropy
 numpy
 matplotlib
 requests
-
+click
+seaborn
+astropy
