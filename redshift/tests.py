@@ -4,6 +4,7 @@ import numpy as np
 
 from .utils import to_categorical, DataSetSampler, MMapSequence
 
+
 def get_lables_and_cubes():
     os.system('wget -O data.npz https://vanderbilt.box.com/shared/static/yio0378rwywv463657z8edxhamkrru7f.npz')
     dataset = np.load('data.npz', mmap_mode='r')

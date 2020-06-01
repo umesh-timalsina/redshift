@@ -1,5 +1,6 @@
 trigger:
   - master
+  - 6-azure-pipelines
 
 pr:
   autoCancel: true
@@ -29,10 +30,6 @@ jobs:
       - bash: echo "##vso[task.prependpath]$CONDA/bin"
         displayName: Add conda to path
 
-      - bash: sudo chown -R $USER $CONDA
-        condition: eq( variables['Agent.OS'], 'Darwin' )
-        displayName: Take ownership of conda installation
-
       - bash: |
           conda create -n test-environment python=3.7
           conda activate test-environment
@@ -42,3 +39,4 @@ jobs:
       - bash: |
           conda activate test-environment
           python -m unittest redshift/tests.py
+        displayName: Run Tests

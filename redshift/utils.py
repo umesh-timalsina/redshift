@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import Sequence
 
-BASE_DIR = os.environ['BASE_DIR']
+BASE_DIR = os.environ.get('BASE_DIR', None)
 MAX_REDSHIFT_VALUES = 0.4
 MAX_DERED_PETRO_MAG = 17.8
 REDSHIFT_KEY = 'z'
