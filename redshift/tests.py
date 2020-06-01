@@ -18,7 +18,7 @@ class TestUtils(unittest.TestCase):
     def setUpClass(cls):
         cls.np_array = np.array([0.0, 0.09, 0.06, 0.39])
         labels, cube = None, None
-        if os.environ['BASE_DIR'] is None:
+        if os.environ.get('BASE_DIR', None) is None:
             labels, cube = get_lables_and_cubes()
         cls.sampler = DataSetSampler(labels=labels,
                                      cube=cube)
