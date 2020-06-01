@@ -20,7 +20,7 @@ jobs:
   - job: TestsForRedshift
     strategy:
       matrix:
-        Python36Ubuntu:
+        Ubuntu:
           imageName: 'ubuntu-latest'
 
     pool:
