@@ -33,11 +33,11 @@ jobs:
       - bash: |
           conda config --set always_yes yes --set changeps1 no
           conda create -n test-environment python=3.7
-          conda activate test-environment
+          source activate test-environment
           pip install -r requirements.txt
         displayName: Install Requirements
 
       - bash: |
-          conda activate test-environment
+          source activate test-environment
           python -m unittest redshift/tests.py
         displayName: Run Tests
