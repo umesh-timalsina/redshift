@@ -1,13 +1,10 @@
-import numpy as nps
-from model.model import RedShiftClassificationModel
-from keras.callbacks import TensorBoard
-from time import time
 import seaborn as sns
 from matplotlib import pyplot as plt
-from sklearn.model_selection import train_test_split
 from astropy.visualization import make_lupton_rgb
 import numpy as np
-
+import tensorflow as tf
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 class Train():
     def __init__(self, batch_size=32, epochs=100):
@@ -75,10 +72,16 @@ class Train():
 
 
 if __name__ == "__main__":
-    from pickle import load
-    with open('data/images/combined_dataset.pkl', 'rb') as pkl:
-        dataset = load(pkl)
-    model = RedShiftClassificationModel((64, 64, 5), 32)
-    train_ins = Train(batch_size=32, epochs=25)
-    train_ins.execute(model, dataset)
+    # from pickle import load
+    # with open('data/images/combined_dataset.pkl', 'rb') as pkl:
+    #     dataset = load(pkl)
+    from model.model import RedShiftClassificationModel
+    from tensorflow.keras.datasets import cifar10, mnist
+    (train_x, train_Y), (test_x, test_Y) = cifar10.load_data()
+    print(train_x.shape, train_Y.shape)
+    model = RedShiftClassificationModel((32, 32, 3), 10)
+    model.fit(train_x, train_Y, epochs=20, validation_split=0.15)
+    # model.eva
+    # train_ins = Train(batch_size=32, epochs=25)
+    # train_ins.execute(model, dataset)
     # train_ins.plot_hist(dataset['y'])
