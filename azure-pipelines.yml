@@ -31,6 +31,7 @@ jobs:
         displayName: Add conda to path
 
       - bash: |
+          conda config --set always_yes yes --set changeps1 no
           conda create -n test-environment python=3.7
           conda activate test-environment
           pip install -r requirements.txt
