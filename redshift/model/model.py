@@ -11,7 +11,7 @@ class RedShiftClassificationModel(Model):
                  input_img_shape,
                  redenning_shape=None,
                  num_redshift_classes=180):
-        """Initialize a Inception model used by http://arxiv.org/abs/1806.06607
+        """A variant of an Inception model used by http://arxiv.org/abs/1806.06607
 
         Parameters
         ----------
@@ -33,10 +33,10 @@ class RedShiftClassificationModel(Model):
         conv_1 = Conv2D(64,
                         kernel_size=(5, 5),
                         padding='same',
-                        activation=PReLU(),
+                        activation='linear',
                         kernel_initializer='glorot_uniform',
                         bias_initializer=Constant(0.1))
-        conv_1_out = conv_1(image_input)
+        conv_1_out = PReLU()(conv_1(image_input))
 
         # Pooling Layer 1
         pooling_layer1 = AveragePooling2D(pool_size=(2, 2),
@@ -85,18 +85,18 @@ class RedShiftClassificationModel(Model):
             input_to_dense = concatenate([input_to_dense, redening_input], axis=1)
 
         dense1 = Dense(units=1096,
-                       activation=PReLU(),
+                       activation='linear',
                        kernel_initializer='glorot_uniform',
                        bias_initializer=Constant(0.1))
 
-        dense1_out = dense1(input_to_dense)
+        dense1_out = PReLU()(dense1(input_to_dense))
 
         dense2 = Dense(units=1096,
-                       activation=PReLU(),
+                       activation='linear',
                        kernel_initializer='glorot_uniform',
                        bias_initializer=Constant(0.1))
 
-        dense2_out = dense2(dense1_out)
+        dense2_out = PReLU()(dense2(dense1_out))
 
         classifier_dense = Dense(units=num_redshift_classes,
                                  activation='softmax',
@@ -104,14 +104,13 @@ class RedShiftClassificationModel(Model):
                                  bias_initializer=Constant(0.1))
 
         model_output = classifier_dense(dense2_out)
-
-        super(RedShiftClassificationModel, self).__init__(
-            inputs=[image_input, redening_input], outputs=model_output)
+        if redenning_shape:
+            super(RedShiftClassificationModel, self).__init__(
+                inputs=[image_input, redening_input], outputs=model_output)
+        else:
+            super(RedShiftClassificationModel, self).__init__(
+                inputs=image_input, outputs=model_output)
         self.summary()
-        opt = Adam(lr=0.001)
-        self.compile(optimizer=opt,
-                     loss='sparse_categorical_crossentropy',
-                     metrics=['sparse_categorical_accuracy'])
 
     def add_inception_layer(self,
                             input_weights,
@@ -123,61 +122,61 @@ class RedShiftClassificationModel(Model):
         c1 = Conv2D(num_f1,
                     kernel_size=(1, 1),
                     padding='same',
-                    activation=PReLU(),
+                    activation='linear',
                     kernel_initializer='glorot_uniform',
                     bias_initializer=Constant(0.1))
 
-        c1_out = c1(input_weights)
+        c1_out = PReLU()(c1(input_weights))
         if kernel_5:
             c2 = Conv2D(num_f1,
                         kernel_size=(1, 1),
                         padding='same',
-                        activation=PReLU(),
+                        activation='linear',
                         kernel_initializer='glorot_uniform',
                         bias_initializer=Constant(0.1))
 
-            c2_out = c2(input_weights)
+            c2_out = PReLU()(c2(input_weights))
 
         # Conv Layer 3 : Feed to pooling layer 1
         c3 = Conv2D(num_f1,
                     kernel_size=(1, 1),
                     padding='same',
-                    activation=PReLU(),
+                    activation='linear',
                     kernel_initializer='glorot_uniform',
                     bias_initializer=Constant(0.1))
 
-        c3_out = c3(input_weights)
+        c3_out = PReLU()(c3(input_weights))
 
         # Conv Layer 4: Feed directly to concat
         c4 = Conv2D(num_f2,
                     kernel_size=(1, 1),
                     padding='same',
-                    activation=PReLU(),
+                    activation='linear',
                     kernel_initializer='glorot_uniform',
                     bias_initializer=Constant(0.1))
 
-        c4_out = c4(input_weights)
+        c4_out = PReLU()(c4(input_weights))
 
         # Conv Layer 5: Feed from c1, feed to concat
         c5 = Conv2D(num_f2,
                     kernel_size=(3, 3),
                     padding='same',
-                    activation=PReLU(),
+                    activation='linear',
                     kernel_initializer='glorot_uniform',
                     bias_initializer=Constant(0.1))
 
-        c5_out = c5(c1_out)
+        c5_out = PReLU()(c5(c1_out))
 
         # Conv Layer 6: Feed from c2, feed to concat
         if kernel_5:
             c6 = Conv2D(num_f2,
                         kernel_size=(5, 5),
                         padding='same',
-                        activation=PReLU(),
+                        activation='linear',
                         kernel_initializer='glorot_uniform',
                         bias_initializer=Constant(0.1))
 
-            c6_out = c6(c2_out)
+            c6_out = PReLU()(c6(c2_out))
 
         # Pooling Layer 1: Feed from conv3, feed to concat
         p1 = AveragePooling2D(pool_size=(2, 2), strides=1, padding='same')
@@ -188,6 +187,28 @@ class RedShiftClassificationModel(Model):
         else:
             return concatenate([c4_out, c5_out, p1_out])
 
+    def compile(self,
+                optimizer=None,
+                loss=None,
+                metrics=None,
+                loss_weights=None,
+                sample_weight_mode=None,
+                weighted_metrics=None,
+                **kwargs):
+        if optimizer is None:
+            optimizer = Adam(lr=0.001)
 
-if __name__ == '__main__':
-    RedShiftClassificationModel((64, 64, 5), redenning_shape=(1,))
+        if loss is None:
+            loss = 'sparse_categorical_crossentropy'
+
+        if metrics is None:
+            metrics = ['sparse_categorical_accuracy']
+
+        super().compile(optimizer=optimizer,
+                        loss=loss,
+                        metrics=metrics,
+                        loss_weights=loss_weights,
+                        sample_weight_mode=sample_weight_mode,
+                        weighted_metrics=weighted_metrics,
+                        **kwargs
+                        )

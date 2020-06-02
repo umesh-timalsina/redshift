@@ -1,6 +1,10 @@
-from keras.utils import plot_model
-from model import RedShiftClassificationModel
-from keras.models import load_model
+from tensorflow.keras.utils import plot_model
+
 
 def save_model_image(model, filename):
-    plot_model(model, filename)
+    """Save the keras model graph to a file"""
+    plot_model(model,
+               to_file=filename,
+               show_shapes=True,
+               show_layer_names=True,
+               dpi=96)

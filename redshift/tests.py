@@ -2,7 +2,13 @@ import os
 import unittest
 import numpy as np
 
-from .utils import to_categorical, DataSetSampler, MMapSequence
+from .utils import (
+    to_categorical,
+    DataSetSampler,
+    MMapSequence,
+    allow_physical_growth
+)
+from .model.model import RedShiftClassificationModel
 
 
 def get_lables_and_cubes():
@@ -59,6 +65,29 @@ class TestUtils(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         os.system('rm -f data.npz')
+
+
+class TestRedshiftClassificationModel(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        allow_physical_growth()
+        cls.model = RedShiftClassificationModel(
+            input_img_shape=(64, 64, 5),
+            redenning_shape=(1,),
+            num_redshift_classes=180
+        )
+
+    def test_model_compile(self):
+        self.model.compile()
+        assert len(self.model.layers) == 80
+
+    def test_model_output(self):
+        input = np.random.rand(100, 64, 64, 5)
+        ebv = np.random.rand(100, 1)
+        preds = self.model.predict(
+            (input, ebv)
+        )
+        assert preds.shape == (100, 180)
 
 
 if __name__ == '__main__':
