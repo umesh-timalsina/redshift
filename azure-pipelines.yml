@@ -1,6 +1,5 @@
 trigger:
   - master
-  - 6-azure-pipelines
 
 pr:
   autoCancel: true
