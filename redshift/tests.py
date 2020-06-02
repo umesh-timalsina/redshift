@@ -79,7 +79,7 @@ class TestRedshiftClassificationModel(unittest.TestCase):
 
     def test_model_compile(self):
         self.model.compile()
-        assert len(self.model.layers) == 50
+        assert len(self.model.layers) == 80
 
     def test_model_output(self):
         input = np.random.rand(100, 64, 64, 5)
