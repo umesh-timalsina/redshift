@@ -1,3 +1,4 @@
+import os
 import warnings
 import math
 from pathlib import Path
@@ -9,7 +10,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import Sequence
 
-BASE_DIR = ''
+BASE_DIR = os.environ.get('BASE_DIR', None)
 MAX_REDSHIFT_VALUES = 0.4
 MAX_DERED_PETRO_MAG = 17.8
 REDSHIFT_KEY = 'z'
@@ -60,6 +61,10 @@ class DataSetSampler:
                  cube=None,
                  labels=None):
         if cube is None:
+            if BASE_DIR is None:
+                raise ValueError(
+                    'Please provide the mmaps, or set environment for BASE_DIR'
+                )
             self.cube = np.load((Path(BASE_DIR) / 'cube.npy').resolve(), mmap_mode='r')
             self.labels = np.load((Path(BASE_DIR) / 'labels.npy').resolve(), mmap_mode='r')
         else:

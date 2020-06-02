@@ -1,0 +1,42 @@
+trigger:
+  - master
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+      - master
+
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily midnight build for master
+  branches:
+    include:
+    - master
+  always: true
+
+jobs:
+  - job: TestsForRedshift
+    strategy:
+      matrix:
+        Ubuntu:
+          imageName: 'ubuntu-latest'
+
+    pool:
+      vmImage: $(imageName)
+
+    steps:
+      - bash: echo "##vso[task.prependpath]$CONDA/bin"
+        displayName: Add conda to path
+
+      - bash: |
+          conda config --set always_yes yes --set changeps1 no
+          conda create -n test-environment python=3.7
+          source activate test-environment
+          pip install -r requirements.txt
+        displayName: Install Requirements
+
+      - bash: |
+          source activate test-environment
+          python -m unittest redshift/tests.py
+        displayName: Run Tests
