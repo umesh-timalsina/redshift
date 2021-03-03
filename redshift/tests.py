@@ -8,6 +8,7 @@ from .utils import (
     MMapSequence,
     allow_physical_growth
 )
+
 from .model.model import RedShiftClassificationModel
 
 

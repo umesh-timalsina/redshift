@@ -10,7 +10,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import Sequence
 
-BASE_DIR = os.environ.get('BASE_DIR', None)
+from logger_factory import LoggerFactory
+
 MAX_REDSHIFT_VALUES = 0.4
 MAX_DERED_PETRO_MAG = 17.8
 REDSHIFT_KEY = 'z'
@@ -48,6 +49,8 @@ class DataSetSampler:
         the datacube
     labels : np.ndarray, default=None
         the labels array
+    test_size: float, default=0.2
+        The test size of the dataset
 
     Attributes
     ----------
@@ -55,7 +58,7 @@ class DataSetSampler:
         The numpy array of the base dataset
     labels : np.ndarray
         The base directory for the dataset
-    tgt_indices : np.ndarray
+    train_indices : np.ndarray
         The intersection of the indexes in the dataset with
         redshifts in the desired deredened petro mags
 
@@ -66,7 +69,10 @@ class DataSetSampler:
     def __init__(self,
                  seed=42,
                  cube=None,
-                 labels=None):
+                 labels=None,
+                 test_size=0.2):
+        BASE_DIR = os.environ.get('BASE_DIR', None)
+        self.logger = LoggerFactory.get_logger(self.__class__.__name__)
         if cube is None:
             if BASE_DIR is None:
                 raise ValueError(
@@ -77,7 +83,11 @@ class DataSetSampler:
         else:
             self.cube = cube
             self.labels = labels
-        self.tgt_indices = self._find_intersection()
+        self.train_indices, self.test_indices = train_test_split(
+            self._find_intersection(),
+            test_size=test_size,
+            random_state=seed
+        )
         self.seed = seed
 
     def _find_intersection(self):
@@ -89,9 +99,11 @@ class DataSetSampler:
         intersection = np.intersect1d(idxes_redshifts,
                                       idxes_dered,
                                       return_indices=False)
-        print(f'There are {intersection.shape[0]} galaxies with redshift '
-              f'values between (0, {MAX_REDSHIFT_VALUES}] and '
-              f'dered_petro_mag between (0, {MAX_DERED_PETRO_MAG}].')
+        self.logger.info(
+            f'There are {intersection.shape[0]} galaxies with redshift '
+            f'values between (0, {MAX_REDSHIFT_VALUES}] and '
+            f'dered_petro_mag between (0, {MAX_DERED_PETRO_MAG}].'
+        )
 
         return intersection
 
@@ -115,12 +127,14 @@ class DataSetSampler:
         np.ndarray
             Array of indexes in the dataset with folds
         """
-        num_samples = int(self.tgt_indices.shape[0] * percentage) // 100
-        print(f'sampling at {percentage} % results in {num_samples} for '
-              f'training and {self.tgt_indices.shape[0] - num_samples} testing.')
+        num_samples = int(self.train_indices.shape[0] * percentage) // 100
+        self.logger.info(
+            f'sampling at {percentage} % results in {num_samples} for '
+            f'training and {self.train_indices.shape[0] - num_samples} testing.'
+        )
 
         sample_idxes_train, sample_idxes_test = train_test_split(
-            self.tgt_indices,
+            self.train_indices,
             random_state=self.seed,
             train_size=num_samples
         )
@@ -148,17 +162,19 @@ class DataSetSampler:
         train: bool, default=True
             If True, return the test set
         """
-        num_samples = int(self.tgt_indices.shape[0] * percentage // 100)
-        print(f'sampling at {percentage} % results in {num_samples} for '
-              f'training and {self.tgt_indices.shape[0]-num_samples} testing.')
+        num_samples = int(self.train_indices.shape[0] * percentage // 100)
+        self.logger.info(
+            f'sampling at {percentage} % results in {num_samples} for '
+            f'training and {self.train_indices.shape[0] - num_samples} testing.'
+        )
 
         sample_idxes_train, sample_idxes_test = train_test_split(
-            self.tgt_indices,
+            self.train_indices,
             random_state=self.seed,
             train_size=num_samples
         )
 
-        assert (sample_idxes_test.shape[0] + sample_idxes_train.shape[0] == self.tgt_indices.shape[0])
+        assert (sample_idxes_test.shape[0] + sample_idxes_train.shape[0] == self.train_indices.shape[0])
         assert np.intersect1d(sample_idxes_train, sample_idxes_test).size == 0
 
         if train:
@@ -182,7 +198,7 @@ class DataSetSampler:
                        hist=True,
                        filename='dataset.png'):
         """Plot the histogram of the dataset"""
-        redshifts = self.labels['z'][self.tgt_indices]
+        redshifts = self.labels['z'][self.train_indices]
         sns.distplot(redshifts.flatten(),
                      bins=bins,
                      kde=kde,
@@ -222,7 +238,9 @@ class MMapSequence(Sequence):
                  flip_prob=0.2,
                  rotate_prob=0.2,
                  max_value=0.4,
-                 num_bins=180):
+                 num_bins=180,
+                 is_training=True):
+        self.logger = LoggerFactory.get_logger(self.__class__.__name__)
         self.labels = labels
         self.cube = cube
         self.idxes = idxes
@@ -232,12 +250,15 @@ class MMapSequence(Sequence):
         self.rotate_prob = rotate_prob
         self.max_value = max_value
         self.num_bins = num_bins
-        print(f'batch size: {self.batch_size}, '
-              f'number of batches : {self.num_batches}, '
-              f'dataset size: {self.idxes.shape}')
+        self.logger.info(
+            f'batch size: {self.batch_size}, '
+            f'number of batches : {self.num_batches}, '
+            f'dataset size: {self.idxes.shape}'
+        )
         self.batches = self._generate_batch_indexes()
         self.flip_indexes = None
         self.rotate_indexes = None
+        self.is_training = is_training
         self.on_epoch_end()
 
     def on_epoch_end(self):
@@ -331,16 +352,19 @@ class MMapSequence(Sequence):
         plt.savefig(filename, bbox_inches='tight')
 
     def __getitem__(self, index):
-        (actual_cube, ebv), z_truth = self._get_batch_at(index)
+        (actual_cube, ebv), z_truth = self._get_batch_at(index, is_categorical=self.is_training)
         indexes = self.batches.get(index)
         datacube = []
-        for i, index in enumerate(indexes):
-            one_cube = actual_cube[i]
-            if index in self.rotate_indexes:
-                one_cube = np.rot90(one_cube)
-            if index in self.flip_indexes:
-                one_cube = np.flip(one_cube)
-            datacube.append(one_cube)
+        if self.is_training:
+            for i, index in enumerate(indexes):
+                one_cube = actual_cube[i]
+                if index in self.rotate_indexes:
+                    one_cube = np.rot90(one_cube)
+                if index in self.flip_indexes:
+                    one_cube = np.flip(one_cube)
+                datacube.append(one_cube)
+        else:
+            datacube = actual_cube
 
         return (np.array(datacube), ebv), z_truth
 
@@ -387,3 +411,6 @@ def to_categorical(targets,
     if len(y_cats.shape) == 1:
         y_cats = np.expand_dims(y_cats, axis=-1)
     return (y_cats - 1).astype(int)
+
+if __name__ == '__main__':
+    DataSetSampler()

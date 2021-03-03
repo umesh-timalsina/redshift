@@ -7,17 +7,13 @@ from tensorflow.keras.layers import (Input, Conv2D, AveragePooling2D,
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.initializers import Constant
 from tensorflow.keras.metrics import Metric
-from tensorflow.keras.initializers import GlorotUniform
-
-SEEDS = [32, 42, 52, 62, 72, 82]
 
 
 class RedShiftClassificationModel(Model):
     def __init__(self,
                  input_img_shape,
                  redenning_shape=None,
-                 num_redshift_classes=180,
-                 seed=None):
+                 num_redshift_classes=180):
         """A variant of an Inception model used by http://arxiv.org/abs/1806.06607
 
         Parameters
@@ -29,12 +25,8 @@ class RedShiftClassificationModel(Model):
         num_redshift_classes: int, default=180
             The number of redshift bins in the final classification task
         """
-        if seed is None:
-            self.seed = SEEDS[4]
-
         # Input Layer Galactic Images
         image_input = Input(shape=input_img_shape)
-
 
         # redening information
         if redenning_shape:
@@ -45,7 +37,7 @@ class RedShiftClassificationModel(Model):
                         kernel_size=(5, 5),
                         padding='same',
                         activation='linear',
-                        kernel_initializer=GlorotUniform(seed=self.seed),
+                        kernel_initializer='glorot_uniform',
                         bias_initializer=Constant(0.1))
         conv_1_out = PReLU()(conv_1(image_input))
 
@@ -97,21 +89,21 @@ class RedShiftClassificationModel(Model):
 
         dense1 = Dense(units=1096,
                        activation='linear',
-                       kernel_initializer=GlorotUniform(seed=self.seed),
+                       kernel_initializer='glorot_uniform',
                        bias_initializer=Constant(0.1))
 
         dense1_out = PReLU()(dense1(input_to_dense))
 
         dense2 = Dense(units=1096,
                        activation='linear',
-                       kernel_initializer=GlorotUniform(seed=self.seed),
+                       kernel_initializer='glorot_uniform',
                        bias_initializer=Constant(0.1))
 
         dense2_out = PReLU()(dense2(dense1_out))
 
         classifier_dense = Dense(units=num_redshift_classes,
                                  activation='softmax',
-                                 kernel_initializer=GlorotUniform(seed=self.seed),
+                                 kernel_initializer='glorot_uniform',
                                  bias_initializer=Constant(0.1))
 
         model_output = classifier_dense(dense2_out)
@@ -134,7 +126,7 @@ class RedShiftClassificationModel(Model):
                     kernel_size=(1, 1),
                     padding='same',
                     activation='linear',
-                    kernel_initializer=GlorotUniform(seed=self.seed),
+                    kernel_initializer='glorot_uniform',
                     bias_initializer=Constant(0.1))
 
         c1_out = PReLU()(c1(input_weights))
@@ -143,7 +135,7 @@ class RedShiftClassificationModel(Model):
                         kernel_size=(1, 1),
                         padding='same',
                         activation='linear',
-                        kernel_initializer=GlorotUniform(seed=self.seed),
+                        kernel_initializer='glorot_uniform',
                         bias_initializer=Constant(0.1))
 
             c2_out = PReLU()(c2(input_weights))
@@ -153,7 +145,7 @@ class RedShiftClassificationModel(Model):
                     kernel_size=(1, 1),
                     padding='same',
                     activation='linear',
-                    kernel_initializer=GlorotUniform(seed=self.seed),
+                    kernel_initializer='glorot_uniform',
                     bias_initializer=Constant(0.1))
 
         c3_out = PReLU()(c3(input_weights))
@@ -163,7 +155,7 @@ class RedShiftClassificationModel(Model):
                     kernel_size=(1, 1),
                     padding='same',
                     activation='linear',
-                    kernel_initializer=GlorotUniform(seed=self.seed),
+                    kernel_initializer='glorot_uniform',
                     bias_initializer=Constant(0.1))
 
         c4_out = PReLU()(c4(input_weights))
@@ -173,7 +165,7 @@ class RedShiftClassificationModel(Model):
                     kernel_size=(3, 3),
                     padding='same',
                     activation='linear',
-                    kernel_initializer=GlorotUniform(seed=self.seed),
+                    kernel_initializer='glorot_uniform',
                     bias_initializer=Constant(0.1))
 
         c5_out = PReLU()(c5(c1_out))
@@ -184,7 +176,7 @@ class RedShiftClassificationModel(Model):
                         kernel_size=(5, 5),
                         padding='same',
                         activation='linear',
-                        kernel_initializer=GlorotUniform(seed=self.seed),
+                        kernel_initializer='glorot_uniform',
                         bias_initializer=Constant(0.1))
 
             c6_out = PReLU()(c6(c2_out))
@@ -241,6 +233,7 @@ class RedshiftMetric(Metric):
         tf.reduce_sum(tf.multiply(y_pred, bins), axis=1)
 
         return (y_pred - y_true) / (y_true + 1)
+
 
 class PredictionBias(RedshiftMetric):
     def __init__(self, name='pred_bias', **kwargs):
