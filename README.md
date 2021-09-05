@@ -1,3 +1,6 @@
+## Archived
+Please visit [the following repository](https://github.com/umesh-timalsina/deepforge-redshift) for the latest developments in this effort.
+
 ## REDSHIFT 
 Redshift is a spectral measurement of how far from the earth the galaxy is moving. The [sdss](https://www.sdss.org/) is a survey conducted by a telescope in the night sky that takes pictures of various regions in the sky. In this repository, we present the preprocessing techniques for SDSS images as well as the code to the model presented by this [paper](https://arxiv.org/abs/1806.06607).
 
